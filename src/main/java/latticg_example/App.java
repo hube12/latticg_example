@@ -3,9 +3,12 @@ package latticg_example;
 import com.seedfinding.latticg.reversal.DynamicProgram;
 import com.seedfinding.latticg.reversal.calltype.java.JavaCalls;
 import com.seedfinding.latticg.util.LCG;
+import kaptainwutax.biomeutils.Biome;
+import kaptainwutax.biomeutils.source.OverworldBiomeSource;
 import kaptainwutax.seedutils.mc.MCVersion;
 import mjtb49.hashreversals.ChunkRandomReverser;
 
+import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class App {
@@ -152,8 +155,8 @@ public class App {
         dynamicProgram.reverse().forEach(s -> {
             count.incrementAndGet();
             System.out.println(s);
-            if (s ==target){
-                System.out.println("FOUND in t = "+(int)(((System.nanoTime() - start) * 1e-9))+" s");
+            if (s == target) {
+                System.out.println("FOUND in t = " + (int) (((System.nanoTime() - start) * 1e-9)) + " s");
             }
         });
         if (count.get() == 1)
@@ -190,13 +193,60 @@ public class App {
             }
         }
     }
+    public static class BiomeData{
+        public Biome biome;
+        public int x;
+        public int z;
+        BiomeData(int x,int z,Biome biome){
+            this.x=x;
+            this.z=z;
+            this.biome=biome;
+        }
+        public double check(OverworldBiomeSource source){
+            Biome biome=source.getBiome(x,0,z);
 
+            if (biome.getCategory()==this.biome.getCategory()){
+                return biome==this.biome?1:0.5;
+            }
+            return 0;
+
+        }
+    }
+    public void crackBiomes(){
+        long seed=220745687588184L;
+        ArrayList<BiomeData> biomeDatas=new ArrayList<>();
+        biomeDatas.add(new BiomeData( 15, 8, Biome.PLAINS));
+        biomeDatas.add(new BiomeData( 14, 8, Biome.PLAINS));
+        biomeDatas.add(new BiomeData( 14, 9, Biome.PLAINS));
+        biomeDatas.add(new BiomeData( 15, 9, Biome.PLAINS));
+        biomeDatas.add(new BiomeData( 11, 11, Biome.JUNGLE));
+        biomeDatas.add(new BiomeData( 10, 11, Biome.JUNGLE));
+        for (long i = 0; i < (1L << 16); i++) {
+            long cur=(i<<48)|seed;
+            boolean good=true;
+            double score=0.0;
+            OverworldBiomeSource source=new OverworldBiomeSource(MCVersion.v1_14,cur);
+            for (BiomeData data:biomeDatas){
+                double s=data.check(source);
+                if (s==0){
+                    good=false;
+                    break;
+                }
+                score+=s;
+            }
+            if (good && score>=5) System.out.println(cur);
+        }
+
+
+
+    }
 
     public static void main(String[] args) {
         App app = new App();
         //app.useChunkRandomReversal();
         //app.reverse12NextDoubleCalls();
         //app.treeReversal12();
-        app.testTree();
+        //app.testTree();
+        app.crackBiomes();
     }
 }
