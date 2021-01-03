@@ -1,5 +1,6 @@
 package latticg_example;
 
+import com.seedfinding.latticg.math.component.BigFraction;
 import com.seedfinding.latticg.reversal.DynamicProgram;
 import com.seedfinding.latticg.reversal.calltype.java.JavaCalls;
 import com.seedfinding.latticg.util.LCG;
@@ -34,6 +35,11 @@ public class App {
         System.out.printf("elapsed: %.2fs%n", (end - start) * 1e-9);
     }
 
+    public void test(){
+        DynamicProgram dynamicProgram = DynamicProgram.create(LCG.JAVA);
+        for (int i = 0; i < 15; i++) dynamicProgram.add(JavaCalls.nextFloat().lessThan(0.1f));
+        dynamicProgram.reverse().forEach(System.out::println);
+    }
     public void useChunkRandomReversal() {
         long decoratorSeed = 1234L;
         int posX = 100;
@@ -219,8 +225,8 @@ public class App {
         biomeDatas.add(new BiomeData( 14, 8, Biome.PLAINS));
         biomeDatas.add(new BiomeData( 14, 9, Biome.PLAINS));
         biomeDatas.add(new BiomeData( 15, 9, Biome.PLAINS));
-        biomeDatas.add(new BiomeData( 11, 11, Biome.JUNGLE));
-        biomeDatas.add(new BiomeData( 10, 11, Biome.JUNGLE));
+        biomeDatas.add(new BiomeData( 11, 11, Biome.JUNGLE_EDGE));
+        biomeDatas.add(new BiomeData( 10, 11, Biome.JUNGLE_EDGE));
         for (long i = 0; i < (1L << 16); i++) {
             long cur=(i<<48)|seed;
             boolean good=true;
@@ -234,7 +240,7 @@ public class App {
                 }
                 score+=s;
             }
-            if (good && score>=5) System.out.println(cur);
+            if (good && score>5) System.out.println(cur);
         }
 
 
