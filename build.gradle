@@ -41,7 +41,7 @@ dependencies {
     // latticg jar
     implementation 'com.seedfinding:latticg:1.04@jar'
     // kap's lib
-    implementation 'com.github.KaptainWutax:SEED:master-SNAPSHOT'
+    implementation 'com.github.hube12:SEED:master-SNAPSHOT'
 }
 
 application {

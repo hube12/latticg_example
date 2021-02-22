@@ -1,16 +1,21 @@
 package latticg_example;
 
-import com.seedfinding.latticg.math.component.BigFraction;
 import com.seedfinding.latticg.reversal.DynamicProgram;
 import com.seedfinding.latticg.reversal.calltype.java.JavaCalls;
 import com.seedfinding.latticg.util.LCG;
 import kaptainwutax.biomeutils.Biome;
 import kaptainwutax.biomeutils.source.OverworldBiomeSource;
+import kaptainwutax.featureutils.Feature;
+import kaptainwutax.featureutils.structure.RegionStructure;
+import kaptainwutax.featureutils.structure.RuinedPortal;
+import kaptainwutax.featureutils.structure.Village;
+import kaptainwutax.seedutils.mc.ChunkRand;
 import kaptainwutax.seedutils.mc.MCVersion;
 import mjtb49.hashreversals.ChunkRandomReverser;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.LongStream;
 
 public class App {
     public void reverse12NextDoubleCalls() {
@@ -33,13 +38,15 @@ public class App {
         long end = System.nanoTime();
 
         System.out.printf("elapsed: %.2fs%n", (end - start) * 1e-9);
+
     }
 
-    public void test(){
+    public void test() {
         DynamicProgram dynamicProgram = DynamicProgram.create(LCG.JAVA);
         for (int i = 0; i < 15; i++) dynamicProgram.add(JavaCalls.nextFloat().lessThan(0.1f));
         dynamicProgram.reverse().forEach(System.out::println);
     }
+
     public void useChunkRandomReversal() {
         long decoratorSeed = 1234L;
         int posX = 100;
@@ -199,60 +206,100 @@ public class App {
             }
         }
     }
-    public static class BiomeData{
+
+    public static class BiomeData {
         public Biome biome;
         public int x;
         public int z;
-        BiomeData(int x,int z,Biome biome){
-            this.x=x;
-            this.z=z;
-            this.biome=biome;
-        }
-        public double check(OverworldBiomeSource source){
-            Biome biome=source.getBiome(x,0,z);
 
-            if (biome.getCategory()==this.biome.getCategory()){
-                return biome==this.biome?1:0.5;
+        BiomeData(int x, int z, Biome biome) {
+            this.x = x;
+            this.z = z;
+            this.biome = biome;
+        }
+
+        public double check(OverworldBiomeSource source) {
+            Biome biome = source.getBiome(x, 0, z);
+
+            if (biome.getCategory() == this.biome.getCategory()) {
+                return biome == this.biome ? 1 : 0.5;
             }
             return 0;
 
         }
     }
-    public void crackBiomes(){
-        long seed=220745687588184L;
-        ArrayList<BiomeData> biomeDatas=new ArrayList<>();
-        biomeDatas.add(new BiomeData( 15, 8, Biome.PLAINS));
-        biomeDatas.add(new BiomeData( 14, 8, Biome.PLAINS));
-        biomeDatas.add(new BiomeData( 14, 9, Biome.PLAINS));
-        biomeDatas.add(new BiomeData( 15, 9, Biome.PLAINS));
-        biomeDatas.add(new BiomeData( 11, 11, Biome.JUNGLE_EDGE));
-        biomeDatas.add(new BiomeData( 10, 11, Biome.JUNGLE_EDGE));
+
+    public void crackBiomes() {
+        long seed = 27594263L;
+        ArrayList<BiomeData> biomeDatas = new ArrayList<>();
+        biomeDatas.add(new BiomeData(-9070, -4555, Biome.FLOWER_FOREST));
+        biomeDatas.add(new BiomeData(1909, -1279, Biome.SAVANNA));
+        biomeDatas.add(new BiomeData(1922, -1223, Biome.JUNGLE_EDGE));
         for (long i = 0; i < (1L << 16); i++) {
-            long cur=(i<<48)|seed;
-            boolean good=true;
-            double score=0.0;
-            OverworldBiomeSource source=new OverworldBiomeSource(MCVersion.v1_14,cur);
-            for (BiomeData data:biomeDatas){
-                double s=data.check(source);
-                if (s==0){
-                    good=false;
+            long cur = (i << 48) | seed;
+            boolean good = true;
+            double score = 0.0;
+            OverworldBiomeSource source = new OverworldBiomeSource(MCVersion.v1_12, cur);
+            for (BiomeData data : biomeDatas) {
+                double s = data.check(source);
+                if (s == 0) {
+                    good = false;
                     break;
                 }
-                score+=s;
+                score += s;
             }
-            if (good && score>5) System.out.println(cur);
+            if (good && score > 2) System.out.println(cur);
         }
-
 
 
     }
 
+    public void runParallel() {
+
+        Village village = new Village(MCVersion.v1_16);
+        ChunkRand rand = new ChunkRand();
+
+        ArrayList<RegionStructure.Data<?>> list = new ArrayList<>();
+        list.add(village.at(0, 0));
+        LongStream stream = LongStream.range(0, 1L << 48).map(structureSeed -> testStructures(list, structureSeed, rand)).parallel();
+        stream.filter(l -> l != 0L).forEach(System.out::println);
+    }
+
+    public Long testStructures(ArrayList<RegionStructure.Data<?>> list, long structureSeed, ChunkRand rand) {
+        boolean isOk = true;
+        for (Feature.Data<?> data : list) {
+            if (!data.feature.canStart(data, structureSeed, rand)) {
+                isOk = false;
+            }
+        }
+        if (isOk) {
+            for (long upperBits = 0; upperBits < (1L << 16); upperBits++) {
+                long worldSeed = upperBits << 48 | structureSeed;
+                OverworldBiomeSource source = new OverworldBiomeSource(MCVersion.v1_16, worldSeed);
+                isOk = true;
+                for (Feature.Data<?> data : list) {
+                    if (!data.feature.canSpawn(data, source)) {
+                        isOk = false;
+                    }
+                }
+                if (isOk) {
+                    return worldSeed;
+                }
+            }
+        }
+        return 0L;
+    }
+
     public static void main(String[] args) {
+        RuinedPortal.CONFIGS.add(MCVersion.v1_16, new RegionStructure.Config(25, 10, 34222645));
+        RuinedPortal netherRuinedPortal=new RuinedPortal(MCVersion.v1_16);
+        System.out.println(netherRuinedPortal.getConfig().separation);
         App app = new App();
         //app.useChunkRandomReversal();
         //app.reverse12NextDoubleCalls();
         //app.treeReversal12();
         //app.testTree();
-        app.crackBiomes();
+        //app.crackBiomes();
+        //app.crackBiomes();
     }
 }
