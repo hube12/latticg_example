@@ -56,14 +56,11 @@ public class MagmaSeed {
         }
     }
 
-
     public static  boolean checkCondition(long seed){
         LCG previous=LCG.JAVA.combine(-1);
         Randy randy=new Randy(previous.nextSeed(seed)^LCG.JAVA.multiplier);
         return randy.nextFloat()<0.02f;
     }
-
-
 
     public static void forward(long seed){
         // raw seedd
