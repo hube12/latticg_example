@@ -20,12 +20,7 @@ public class ExampleStructure {
             return biome == Biome.DESERT;
         }
     };
-    private static final Village VILLAGE = new Village(version) {
-        @Override
-        public boolean isValidBiome(Biome biome) {
-            return biome == Biome.DESERT;
-        }
-    };
+    private static final Village VILLAGE = new Village(version);
     private static final DesertPyramid DESERT_TEMPLE = new DesertPyramid(version);
     private static final BuriedTreasure TREASURE = new BuriedTreasure(version);
     private static final Monument OCEAN_MONUMENT = new Monument(version);
